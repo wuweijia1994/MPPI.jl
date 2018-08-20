@@ -1,41 +1,38 @@
 #!/usr/bin/env python
-
-#!/usr/bin/env python
 from mujoco_py import load_model_from_path, MjSim, MjViewer
 import os
 import numpy as np
-import math
 import matplotlib.pyplot as plt
-
 import copy
+import math
 #the first 9 -> 9 joints
 #the following 6 -> free joint
 #no idea for the last qpos
 
 #Use several method at every time we start the simulation
-JOINTSNUM = 1
-K = 40
-T = 50
+JOINTSNUM = 9
+K = 50
+T = 20
 alpha = 0.1#TODO
-lamb = 0.05
+lamb = 0.1
 TARGETSTATE = [1, 1 ,1, 0, 0, 0]
-gama = 0.5
+gama = 0.5
+# gama = 0.5
 
+#TODO add another function that very close not clear.
 def cost(state):
-    #angle to be zero
-    #cart init pos is 0, vel is 0
-    #pole init pos is 0, vel is 0
-    cart_pos, pole_pos = state[1]
-    # cart_vel, pole_vel = state[2]
-    cost = (pole_pos)*(pole_pos)+(cart_pos)*(cart_pos)
+    end_pos = state[0]
+    obj_pos = state[1]
+    cost = 0
+    for i in range(len(end_pos)):
+        cost += (end_pos[i]-obj_pos[i])**2
     return cost
 
 def getNormal(mu, sigma, T = 1):
     temp = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag(sigma))]))
     return temp
-
 #simulation initial
-def simulationInit(path="inverted_pendulum.xml"):
+def simulationInit(path="arm_claw.xml"):
     model = load_model_from_path(path)
     real_sim = MjSim(model)
     return real_sim
@@ -57,28 +54,30 @@ def updateControl(U, base_control, w):
         for j in range(len(base_control)):
             U[i] += base_control[j][i] * w[j]
     return U
+# def cost(nex
 # def cost(next_state):
     # = next_state
 
 real_sim = simulationInit()
-# real_viewer = MjViewer(real_sim)
-# viewer.render()
+#viewer = MjViewer(real_sim)
 
 # mean and standard deviation
 mu = np.zeros(JOINTSNUM)
-sigma = 0.01*np.eye(JOINTSNUM)
+sigma = 5*np.eye(JOINTSNUM)
 
 np.random.seed(1)
+
 
 # kexi = np.random.normal(np.transpose(mu), sigma, T)
 #TODO figure out the control input is column vector or not.
 #MPPI main function
 U = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag(sigma))]))
 # print(real_sim.get_state())
-while not taskFinish(real_sim):#TODO: implement the taskFinish function
+for i in range(100):#TODO: implement the taskFinish function
     S=[0]*K
     base_control = []
     sim_state = real_sim.get_state()
+    temp = []
     for k in range(K):
         sample_sim = simulationInit()
         sample_sim.set_state(sim_state)
@@ -92,31 +91,27 @@ while not taskFinish(real_sim):#TODO: implement the taskFinish function
             # print(v)
             sample_sim.data.ctrl[:] = v
             sample_sim.step()
-            next_state = sample_sim.get_state()
-            # print(next_state[1])#Get the pos of the joints
-
-        # print("sample_sim " + str(k) + " works")
-            S[k] += cost(next_state)
-            # S[k] += float(np.multiply(np.multiply(np.transpose(gama*U[t]), np.linalg.inv(sigma)), v))# TODO both the cost function and the multiply format
+            # print(next_state)
+            # print(sample_sim.data.site_xpos)
+            S[k] += cost(sample_sim.data.site_xpos)#TODO terminal state cost
+            temp.append(sample_sim.data.site_xpos[0])
+            # S[k] += cost(next_state) + np.multiply(np.multiply(np.transpose(gama*u[t]), np.linalg.inv(sigma)), v)# TODO both the cost function and the multiply format
         # S[k] += terminalStateCost(next_state)#TODO define phi, the terminal cost
-    w = weightComputation(S)
 
+    w = weightComputation(S)
     # plt.plot(range(len(w)), w, 'blue', range(len(w)), S, 'r')
+    # plt.plot(range(len(temp)), [x[0] for x in temp])
     # plt.show()
     U = updateControl(U, base_control, w)
     real_sim.data.ctrl[:] = U[0]
     real_sim.step()
+    real_viewer = MjViewer(real_sim)
+    real_viewer.render()
     U[:-1] = U[1:]
     U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
-    # real_viewer.render()
 
     print(real_sim.get_state()[1])
-    # real_viewer.render()
-    # print("real_sim works well")
-
-
-
-
+    print("real_sim works well")
 
 # # set all the 1D list to be the column vector
 # while not taskFinish(real_sim):
