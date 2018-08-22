@@ -23,9 +23,15 @@ gama = 0.5
 def cost(state):
     end_pos = state[0]
     obj_pos = state[1]
+    target = [0.2, 0.1, 0]
     cost = 0
     for i in range(len(end_pos)):
         cost += (end_pos[i]-obj_pos[i])**2
+        cost += (target[i]-obj_pos[i])**2
+    print("end_pos:")
+    print(end_pos)
+    print("obj_pos:")
+    print(obj_pos)
     return cost
 
 def getNormal(mu, sigma, T = 1):
@@ -110,7 +116,7 @@ for i in range(100):#TODO: implement the taskFinish function
     U[:-1] = U[1:]
     U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
 
-    print(real_sim.get_state()[1])
+    # print(real_sim.get_state()[1])
     print("real_sim works well")
 
 # # set all the 1D list to be the column vector
