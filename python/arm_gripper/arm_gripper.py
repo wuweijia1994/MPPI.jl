@@ -17,7 +17,6 @@ alpha = 0.1#TODO
 lamb = 0.1
 TARGETSTATE = [1, 1 ,1, 0, 0, 0]
 gama = 0.5
-# gama = 0.5
 
 #TODO add another function that very close not clear.
 def cost(state):
@@ -28,15 +27,24 @@ def cost(state):
     for i in range(len(end_pos)):
         cost += (end_pos[i]-obj_pos[i])**2
         cost += (target[i]-obj_pos[i])**2
-    print("end_pos:")
-    print(end_pos)
-    print("obj_pos:")
-    print(obj_pos)
+    # print("end_pos:")
+    # print(end_pos)
+    # print("obj_pos:")
+    # print(obj_pos)
+    return cost
+
+def terminalCost(state):
+    obj_pos = state[1]
+    target = [0.2, 0.1, 0]
+    cost = 0
+    for o,t in zip(obj_pos, target):
+        cost += (o-t)**2
     return cost
 
 def getNormal(mu, sigma, T = 1):
     temp = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag(sigma))]))
     return temp
+    
 #simulation initial
 def simulationInit(path="arm_claw.xml"):
     model = load_model_from_path(path)
@@ -79,7 +87,7 @@ np.random.seed(1)
 #MPPI main function
 U = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag(sigma))]))
 # print(real_sim.get_state())
-for i in range(100):#TODO: implement the taskFinish function
+for i in range(200):#TODO: implement the taskFinish function
     S=[0]*K
     base_control = []
     sim_state = real_sim.get_state()
@@ -102,7 +110,7 @@ for i in range(100):#TODO: implement the taskFinish function
             S[k] += cost(sample_sim.data.site_xpos)#TODO terminal state cost
             temp.append(sample_sim.data.site_xpos[0])
             # S[k] += cost(next_state) + np.multiply(np.multiply(np.transpose(gama*u[t]), np.linalg.inv(sigma)), v)# TODO both the cost function and the multiply format
-        # S[k] += terminalStateCost(next_state)#TODO define phi, the terminal cost
+        S[k] += terminalCost(sample_sim.data.site_xpos)#TODO define phi, the terminal cost
 
     w = weightComputation(S)
     # plt.plot(range(len(w)), w, 'blue', range(len(w)), S, 'r')
