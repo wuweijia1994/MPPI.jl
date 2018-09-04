@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-import math
+import math 
 #the first 9 -> 9 joints
 #the following 6 -> free joint
 #no idea for the last qpos
@@ -46,7 +46,7 @@ def getNormal(mu, sigma, T = 1):
     return temp
     
 #simulation initial
-def simulationInit(path="arm_claw.xml"):
+def simulationInit(path="/home/wuweijia/GitHub/MPPI.jl/python/arm_gripper/arm_claw.xml"):
     model = load_model_from_path(path)
     real_sim = MjSim(model)
     return real_sim
