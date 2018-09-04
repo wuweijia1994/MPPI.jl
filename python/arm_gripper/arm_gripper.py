@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from mujoco_py import load_model_from_path, MjSim, MjViewer
+import mujoco_py
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,7 +47,7 @@ def getNormal(mu, sigma, T = 1):
     return temp
     
 #simulation initial
-def simulationInit(path="arm_claw.xml"):
+def simulationInit(path="/Users/weijiawu/Documents/GitHub/MPPI.jl/python/arm_gripper/arm_claw.xml"):
     model = load_model_from_path(path)
     real_sim = MjSim(model)
     return real_sim
@@ -87,7 +88,10 @@ np.random.seed(1)
 #MPPI main function
 U = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag(sigma))]))
 # print(real_sim.get_state())
-for i in range(200):#TODO: implement the taskFinish function
+real_viewer = MjViewer(real_sim)
+real_viewer._record_video = True
+# real_viewer._video_frames = [60]
+for i in range(2):#TODO: implement the taskFinish function
     S=[0]*K
     base_control = []
     sim_state = real_sim.get_state()
@@ -119,14 +123,14 @@ for i in range(200):#TODO: implement the taskFinish function
     U = updateControl(U, base_control, w)
     real_sim.data.ctrl[:] = U[0]
     real_sim.step()
-    real_viewer = MjViewer(real_sim)
+
     real_viewer.render()
     U[:-1] = U[1:]
     U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
 
     # print(real_sim.get_state()[1])
     print("real_sim works well")
-
+mujoco_py.mjviewer.save_video(real_viewer._video_frames, "./video_%07d.mp4", 1)
 # # set all the 1D list to be the column vector
 # while not taskFinish(real_sim):
 #     u = [0.01]*JOINTSNUM
