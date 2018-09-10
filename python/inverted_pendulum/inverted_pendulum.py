@@ -19,7 +19,7 @@ T = 50
 alpha = 0.1#TODO
 lamb = 0.05
 TARGETSTATE = [1, 1 ,1, 0, 0, 0]
-gama = 0.5
+gama =0.5
 
 def cost(state):
     #angle to be zero
@@ -61,7 +61,8 @@ def updateControl(U, base_control, w):
     # = next_state
 
 real_sim = simulationInit()
-# real_viewer = MjViewer(real_sim)
+real_viewer = MjViewer(real_sim)
+real_viewer._render_every_frame = True
 # viewer.render()
 
 # mean and standard deviation
@@ -108,7 +109,7 @@ while not taskFinish(real_sim):#TODO: implement the taskFinish function
     real_sim.step()
     U[:-1] = U[1:]
     U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
-    # real_viewer.render()
+    real_viewer.render()
 
     print(real_sim.get_state()[1])
     # real_viewer.render()
