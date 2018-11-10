@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # ---
 # jupyter:
 #   jupytext:
@@ -23,14 +22,14 @@
 #     version: 3.6.1
 # ---
 
-from mujoco_py import load_model_from_path, MjSim, MjViewer, mjviewer
+from mujoco_py import load_model_from_path, MjSim, MjViewer
 import os
 import numpy as np
 import math
 import copy
 import multiprocessing as mp
-import collections
 import utils
+import queue
 # import matplotlib.pyplot as plt
 
 class MPPI(object):
@@ -102,7 +101,7 @@ class MPPI(object):
             self.CUSTOM_VIEWER._render_every_frame = True
             self.CUSTOM_VIEWER._video_idx = 1
         elif self.RENDER == "RECORD":
-            self.record=collections.deque()
+            self.record=queue.Queue()
         else:
             self.CUSTOM_VIEWER = None
 
@@ -197,6 +196,9 @@ class MPPI(object):
                 self.CUSTOM_VIEWER.render()
 
             elif self.RENDER == "RECORD":
-                self.record.append(self.realEnv.render(600, 600))
+                self.record.put(np.flip(self.realEnv.render( 1280, 608, device_id = 0), 0))
                 
-        mjviewer.save_video(self.record, "./video_"+utils.getTimeStamp()+".mp4", 10)
+        if self.RENDER == "RECORD":        
+            utils.save_video(self.record, ".videos/video_"+utils.getTimeStamp()+".mp4", 10)
+            
+        print("Finish MPPI Planning")
