@@ -1,4 +1,28 @@
 #!/usr/bin/env python
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.3'
+#       jupytext_version: 0.8.4
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.6.1
+# ---
+
 from mujoco_py import load_model_from_path, MjSim, MjViewer
 import MPPI
 import os
@@ -49,9 +73,10 @@ def hm_env(path=os.path.join(os.curdir, "humanoid/humanoid.xml")):
     real_sim = MjSim(model)
     return real_sim
 
-ip_args = {"JOINTSNUM":1, "K":20, "T":500, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":True, "cost_fun":ip_cost, "env_fun":ip_env, "mu":None, "sigma":None}
+ip_args = {"JOINTSNUM":1, "K":20, "T":500, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":"Record", "cost_fun":ip_cost, "env_fun":ip_env, "mu":None, "sigma":None}
 
-hm_args = {"JOINTSNUM":17, "K":96, "T":100, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":False, "cost_fun":hm_cost, "env_fun":hm_env, "mu":np.zeros(17), "sigma":0.2*np.eye(17)}
+hm_args = {"JOINTSNUM":17, "K":48, "T":100, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":"RECORD", "cost_fun":hm_cost, "env_fun":hm_env, "mu":np.zeros(17), "sigma":0.2*np.eye(17)}
+
 
 args = {"inverted_pendulum":ip_args, "humanoid":hm_args}
 

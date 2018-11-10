@@ -23,12 +23,14 @@
 #     version: 3.6.1
 # ---
 
-from mujoco_py import load_model_from_path, MjSim, MjViewer
+from mujoco_py import load_model_from_path, MjSim, MjViewer, mjviewer
 import os
 import numpy as np
 import math
 import copy
 import multiprocessing as mp
+import collections
+import utils
 # import matplotlib.pyplot as plt
 
 class MPPI(object):
@@ -100,8 +102,7 @@ class MPPI(object):
             self.CUSTOM_VIEWER._render_every_frame = True
             self.CUSTOM_VIEWER._video_idx = 1
         elif self.RENDER == "RECORD":
-            self.CUSTOM_VIEWER = MjViewer(real_sim)
-            self.CUSTOM_VIEWER._record_video = True                
+            self.record=collections.deque()
         else:
             self.CUSTOM_VIEWER = None
 
@@ -192,8 +193,10 @@ class MPPI(object):
     # U[:-1] = U[1:]
     # U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
 
-            if self.RENDER == "RENDER":
+            if self.RENDER=="RENDER":
                 self.CUSTOM_VIEWER.render()
+
             elif self.RENDER == "RECORD":
-                mujoco_py.mjviewer.save_video(real_viewer._video_queue, "./video_"+getFileName()+getTimeStamp()+".mp4", 10)
-print("finish")
+                self.record.append(self.realEnv.render(600, 600))
+                
+        mjviewer.save_video(self.record, "./video_"+utils.getTimeStamp()+".mp4", 10)
