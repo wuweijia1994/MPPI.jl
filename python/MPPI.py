@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-from mujoco_py import load_model_from_path, MjSim, MjViewer
+from mujoco_py import load_model_from_path, MjSim, MjViewer, mjviewer
 import os
 import numpy as np
 import math
 import copy
 import multiprocessing as mp
+import utils
 # import matplotlib.pyplot as plt
 
 class MPPI(object):
@@ -68,13 +69,16 @@ class MPPI(object):
             printf("There is no customerized cost function.")
             exit()
 
-    def init_RealEnv(self, rend = False):
+    def init_RealEnv(self, rend = "None"):
         self.realEnv = self.get_Env()
         self.RENDER = rend
-        if self.RENDER:
+        if self.RENDER == "RENDER":
             self.CUSTOM_VIEWER = MjViewer(self.realEnv)
             self.CUSTOM_VIEWER._render_every_frame = True
             self.CUSTOM_VIEWER._video_idx = 1
+        elif self.RENDER == "RECORD":
+            self.CUSTOM_VIEWER = MjViewer(self.realEnv)
+            self.CUSTOM_VIEWER._record_video = True
         else:
             self.CUSTOM_VIEWER = None
 
@@ -165,5 +169,10 @@ class MPPI(object):
     # U[:-1] = U[1:]
     # U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
 
-            if self.RENDER:
+            if self.RENDER=="RENDER":
                 self.CUSTOM_VIEWER.render()
+
+            elif self.RENDER == "RECORD":
+                frame = self.CUSTOM_VIEWER._read_pixels_as_in_window()
+                self.CUSTOM_VIEWER._video_queue.put(frame)
+        mjviewer.save_video(self.CUSTOM_VIEWER._video_queue, "./video_"+utils.getTimeStamp()+".mp4", 10)

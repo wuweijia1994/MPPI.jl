@@ -49,9 +49,9 @@ def hm_env(path=os.path.join(os.curdir, "humanoid/humanoid.xml")):
     real_sim = MjSim(model)
     return real_sim
 
-ip_args = {"JOINTSNUM":1, "K":20, "T":500, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":True, "cost_fun":ip_cost, "env_fun":ip_env, "mu":None, "sigma":None}
+ip_args = {"JOINTSNUM":1, "K":20, "T":500, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":"Record", "cost_fun":ip_cost, "env_fun":ip_env, "mu":None, "sigma":None}
 
-hm_args = {"JOINTSNUM":17, "K":2, "T":100, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":True, "cost_fun":hm_cost, "env_fun":hm_env, "mu":np.zeros(17), "sigma":0.2*np.eye(17)}
+hm_args = {"JOINTSNUM":17, "K":2, "T":100, "alpha":0.1, "lamb":0.05, "gama":0.5, "render":"RECORD", "cost_fun":hm_cost, "env_fun":hm_env, "mu":np.zeros(17), "sigma":0.2*np.eye(17)}
 
 args = {"inverted_pendulum":ip_args, "humanoid":hm_args}
 
