@@ -1,4 +1,28 @@
 #!/usr/bin/env python
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.3'
+#       jupytext_version: 0.8.4
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.6.1
+# ---
+
 from mujoco_py import load_model_from_path, MjSim, MjViewer
 import os
 import numpy as np
@@ -68,13 +92,16 @@ class MPPI(object):
             printf("There is no customerized cost function.")
             exit()
 
-    def init_RealEnv(self, rend = False):
+    def init_RealEnv(self, rend = "None"):
         self.realEnv = self.get_Env()
         self.RENDER = rend
-        if self.RENDER:
+        if self.RENDER == "RENDER":
             self.CUSTOM_VIEWER = MjViewer(self.realEnv)
             self.CUSTOM_VIEWER._render_every_frame = True
             self.CUSTOM_VIEWER._video_idx = 1
+        elif self.RENDER == "RECORD":
+            self.CUSTOM_VIEWER = MjViewer(real_sim)
+            self.CUSTOM_VIEWER._record_video = True                
         else:
             self.CUSTOM_VIEWER = None
 
@@ -165,5 +192,8 @@ class MPPI(object):
     # U[:-1] = U[1:]
     # U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
 
-            if self.RENDER:
+            if self.RENDER == "RENDER":
                 self.CUSTOM_VIEWER.render()
+            elif self.RENDER == "RECORD":
+                mujoco_py.mjviewer.save_video(real_viewer._video_queue, "./video_"+getFileName()+getTimeStamp()+".mp4", 10)
+print("finish")
