@@ -2,39 +2,23 @@
 # jupyter:
 #   jupytext:
 #     text_representation:
-#       extension: .py
+#       extension: .jl.py
 #       format_name: light
 #       format_version: '1.3'
 #       jupytext_version: 0.8.4
 #   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
+#     display_name: Julia 1.0.2
+#     language: julia
+#     name: julia-1.0
 #   language_info:
-#     codemirror_mode:
-#       name: ipython
-#       version: 3
-#     file_extension: .py
-#     mimetype: text/x-python
-#     name: python
-#     nbconvert_exporter: python
-#     pygments_lexer: ipython3
-#     version: 3.6.5
+#     file_extension: .jl
+#     mimetype: application/julia
+#     name: julia
+#     version: 1.0.2
 # ---
 
-# +
-from mujoco_py import load_model_from_path, load_model_from_mjb, MjSim, MjViewer
-import io
-import os
-import numpy as np
-import math
-import copy
-import multiprocessing as mp
-import utils
-import queue
-
-np.random.seed(1)
-# import matplotlib.pyplot as plt
+using Pkg
+using MuJoCo
 
 class MPPI(object):
     """docstring for MPPI."""
@@ -48,18 +32,17 @@ class MPPI(object):
         self.lamb = args['lamb']
         self.gama = args['gama']
         self.RENDER = args['render']
-        self.env_path = args['env_path']
 
         #set the env and cost function
         self.set_Cost(args['cost_fun'])
+        self.set_Env(args['env_fun'])
         # print(args['mu'])
         if not args['mu'].any():
-            self.set_Mu_Sigma(np.zeros(self.num_joint), 5*np.eye(self.num_joint))
+            self.set_Mu_Sigma(np.zeros(self.num_joint), 0.1*np.eye(self.num_joint))
         else:
             self.set_Mu_Sigma(args['mu'], args['sigma'])
 
-#         self.output = mp.Manager().Queue()
-        self.output = mp.Queue()
+        self.output = mp.Manager().Queue()
         self.low_bound = -1.0
         self.high_bound = 1.0
         self.init_RealEnv(self.RENDER)
@@ -74,53 +57,28 @@ class MPPI(object):
         self.mu = mu
         self.sigma = sigma
 
-#     def get_Cost(self, data):
-#         if self.CUSTOM_COST:
-#             return self.CUSTOM_COST(data)
-#         else:
-#             printf("There is no customerized cost function.")
-#             return sum([x**2] for x in state)
-        
     def get_Cost(self, data):
-        
-        state = data.site_xpos
-        end_pos = state[0]
-        obj_pos = state[1]
-        target = [0.2, 0.1, 0.2]
-        cost = 0
-        for i in range(len(end_pos)):
-            cost += (end_pos[i]-obj_pos[i])**2
-            cost += (target[i]-obj_pos[i])**2
-        return cost
+        if self.CUSTOM_COST:
+            return self.CUSTOM_COST(data)
+        else:
+            printf("There is no customerized cost function.")
+            return sum([x**2] for x in state)
 
-    def get_TerminalCost(self, data):
-        episode_cost = 0
-        state = data.site_xpos
-        obj_pos = state[1]
-        target = [0.1, 0.1, 0]
-        for o,t in zip(obj_pos, target):
-            episode_cost += (o-t)**2
-        return episode_cost
+    def get_TerminalCost(self, state):
+        return 0
 
     def get_Normal(self, mu, sigma, T = 1):
-#         disturb = np.random.normal(0, 0.1, (T, self.num_joint))
         ranVect = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(self.mu, np.diag(self.sigma))]))
         return ranVect
 
-    def get_fast_normal(self, T):
-        disturb = np.random.normal(0, 5, (T, self.num_joint))
-        return disturb
-    
-#     def set_Env(self, env_fun = None):
-#         self.CUSTOM_ENV = env_fun
+    def set_Env(self, env_fun = None):
+        self.CUSTOM_ENV = env_fun
 
     def get_Env(self):
-        if self.env_path:
-                model = load_model_from_path(self.env_path)
-                real_sim = MjSim(model)
-                return real_sim
+        if self.CUSTOM_ENV:
+            return self.CUSTOM_ENV()
         else:
-            print("There is no customerized cost function.")
+            printf("There is no customerized cost function.")
             exit()
 
     def init_RealEnv(self, rend = "None"):
@@ -153,10 +111,9 @@ class MPPI(object):
         lou = min(self.S)
         yita = sum(math.exp((lou - self.S[x])/self.lamb) for x in range(len(self.S)))
         self.w = []
-        w_append = self.w.append
         for i in range(len(self.S)):
-            w_append(math.exp((lou - self.S[i])/self.lamb)/yita)
-#         return self.w
+            self.w.append(math.exp((lou - self.S[i])/self.lamb)/yita)
+        self.w
 
     def apply_Control(self, env, ctrl):
         env.data.ctrl[:] = np.clip(ctrl, [self.low_bound]*self.num_joint, [self.high_bound]*self.num_joint)
@@ -264,11 +221,10 @@ class MPPI(object):
             results.sort()
             self.S = [r[1] for r in results]
 
-            print(self.S[0])
+            # print(self.S)
             self.compute_Weight()
             self.update_Control()
             self.apply_Control(self.realEnv, self.U[0])
-#             print(U[0])
             self.add_U()
 
     # real_sim.data.ctrl[:] = np.clip(U[0], [-0.4]*JOINTSNUM, [0.4]*JOINTSNUM)
@@ -285,4 +241,4 @@ class MPPI(object):
         if self.RENDER == "RECORD":
             utils.save_video(self.record, "./videos/video_"+utils.getTimeStamp()+".mp4", 10)
 
-#         print("Finish MPPI Planning")
+        print("Finish MPPI Planning")
