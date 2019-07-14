@@ -1,4 +1,27 @@
-#!/usr/bin/env python
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.3'
+#       jupytext_version: 0.8.4
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.6.5
+# ---
+
 from mujoco_py import load_model_from_path, MjSim, MjViewer
 import mujoco_py
 import os
@@ -7,6 +30,8 @@ import matplotlib.pyplot as plt
 import copy
 import math
 import time
+import queue
+import imageio
 import datetime
 
 def getTimeStamp():
@@ -25,6 +50,7 @@ lamb = 0.1
 TARGETSTATE = [1, 1 ,1, 0, 0, 0]
 gama = 0.5
 iters = 600
+record=queue.Queue()
 
 #TODO add another function that very close not clear.
 def cost(state):
@@ -53,9 +79,9 @@ def getNormal(mu, sigma, T = 1):
     temp = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag(sigma))]))
     return temp
 
-#simulation initial
+# simulation initial
 
-def simulationInit(path="/home/wuweijia/GitHub/MPPI.jl/python/arm_gripper/arm_claw.xml"):
+def simulationInit(path="/home/wuweijia/GitHub/MPPI/python/arm_gripper/arm_claw.xml"):
 
 #def simulationInit(path="/Users/weijiawu/Documents/GitHub/MPPI.jl/python/arm_gripper/arm_claw.xml"):
 
@@ -84,6 +110,7 @@ def getFileName():
     return "K:"+str(K)+"-T:"+str(T)+"-iters:"+str(iters)+"-gama:"+str(gama)+"-lamb:"+str(lamb)+"-alpha:"+str(alpha)
 
 real_sim = simulationInit()
+#import pdb; pdb.set_trace()
 #viewer = MjViewer(real_sim)
 
 # mean and standard deviation
@@ -100,12 +127,7 @@ U = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag
 # print(real_sim.get_state())
 # pool = MjRenderPool(real_sim, n_workers=4)
 
-real_viewer = MjViewer(real_sim)
-real_viewer._record_video = True
-real_viewer._render_every_frame = True
-real_viewer._video_idx = 1
-# real_viewer._show_mocap=False
-# real_viewer._video_frames = [60]
+# +
 for i in range(iters):#TODO: implement the taskFinish function
     S=[0]*K
     base_control = []
@@ -141,11 +163,19 @@ for i in range(iters):#TODO: implement the taskFinish function
 
     U[:-1] = U[1:]
     U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
-    real_viewer.render()
+    record.put(np.flip(real_sim.render(1280, 608, device_id = 0), 0))
 
     # print(real_sim.get_state()[1])
     print("real_sim works well")
-#print(real_viewer._video_frames)_video_frames
 
-mujoco_py.mjviewer.save_video(real_viewer._video_queue, "./video_"+getFileName()+getTimeStamp()+".mp4", 10)
-print("finish")
+filename = "./arm_gripper_video.mp4"
+fps = 10
+
+if not os.path.isdir(os.path.dirname(filename)):
+    os.mkdir(os.path.dirname(filename))
+
+writer = imageio.get_writer(filename, fps=fps)
+while not record.empty():
+    frame = record.get()
+    writer.append_data(frame)
+writer.close()

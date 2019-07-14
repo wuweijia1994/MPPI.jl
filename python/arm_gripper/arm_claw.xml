@@ -1,14 +1,11 @@
 <!-- ======================================================
 	This file is part of MuJoCo.
 	Copyright 2009-2016 Roboti LLC.
-
 	Model 		:: arm_claw
-
 	Mujoco		:: Advanced physics simulation engine
 		Source		: www.roboti.us
 		Version		: 1.31
 		Released 	: 23Apr16
-
 	Author		:: Vikash Kumar
 		Contacts 	: kumar@roboti.us
 		Last edits 	: 30Apr16, 30Nov'15, 5Nov'15

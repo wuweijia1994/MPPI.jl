@@ -1,0 +1,3 @@
+Sun Aug 19 17:32:50 2018
+ERROR: Could not open activation key file /Users/weijiawu/Google Drive/GIX 2018 Spring/Mujoco/Program/mjkey.txt
+
