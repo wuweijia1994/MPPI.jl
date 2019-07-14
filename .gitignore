@@ -7,3 +7,6 @@
 *.txt
 *.png
 *.stats
+*.pickle
+*.out
+*.swp
