@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import scipy.linalg
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, filename="output.log", format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 LOGGER = logging.getLogger(__name__)
 def logsum(vec, axis=0, keepdims=True):
@@ -47,6 +47,7 @@ class GMM(object):
         # Set hyperparameters.
         m = self.N
         n0 = m - 2 - mu0.shape[0]
+        #import pdb; pdb.set_trace()
 
         # Normalize.
         m = float(m) / self.N
@@ -69,6 +70,8 @@ class GMM(object):
         logobs = -0.5*np.ones((N, K))*D*np.log(2*np.pi)
         for i in range(K):
             mu, sigma = self.mu[i], self.sigma[i]
+            LOGGER.debug("sigma shape: {}".format(sigma.shape))
+            LOGGER.debug("sigma: \n{}".format(sigma))
             L = scipy.linalg.cholesky(sigma, lower=True)
             LOGGER.debug("np.sum(np.log(np.diag(L))):\n{}".format(np.sum(np.log(np.diag(L)))))
             logobs[:, i] -= np.sum(np.log(np.diag(L)))
@@ -132,6 +135,7 @@ class GMM(object):
             K: Number of clusters to use.
         """
         # Constants.
+        #import pdb; pdb.set_trace()
         N = data.shape[0]
         Do = data.shape[1]
 
@@ -161,7 +165,7 @@ class GMM(object):
                 diff = (data[cluster_idx, :] - mu).T
                 sigma = (1.0 / K) * (diff.dot(diff.T))
                 self.mu[i, :] = mu
-                self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
+                self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-4
                 LOGGER.debug("data:\n {}".format(data))
                 LOGGER.debug("cluster_idx:\n {}".format(cluster_idx))
                 LOGGER.debug("data[cluster_idx, :]:\n {}".format(data[cluster_idx, :]))

@@ -1,4 +1,8 @@
-import GMM
+#import GMM
+import sys
+import os
+sys.path.append(os.path.split(os.path.realpath(__file__))[0])
+import DynamicsPriorGMM
 import numpy as np
 class DynamicsLRPrior(object):
     """ Dynamics with linear regression, with arbitrary prior. """
@@ -6,7 +10,7 @@ class DynamicsLRPrior(object):
         self.Fm = None
         self.fv = None
         self.dyn_covar = None
-        self.prior = GMM.GMM()
+        self.prior = DynamicsPriorGMM.DynamicsPriorGMM()
 
     def update_prior(self, X, U):
         """ Update dynamics prior. """
@@ -30,10 +34,13 @@ class DynamicsLRPrior(object):
         empsig = 0.5 * (empsig + empsig.T)
         # MAP estimate of joint distribution.
         N = dwts.shape[0]
+        #import pdb; pdb.set_trace()
         mu = mun
-        sigma = (N * empsig + Phi + (N * m) / (N + m) *
+        #sigma = (N * empsig + Phi + (N * m) / (N + m) *
+        sigma = (N * empsig + Phi + (n0 * m) / (n0 + m) *
                 np.outer(mun - mu0, mun - mu0)) / (N + n0)
         sigma = 0.5 * (sigma + sigma.T)
+        import pdb; pdb.set_trace()
         # Add sigma regularization.
         sigma += sig_reg
         # Conditioning to get dynamics.
@@ -64,8 +71,9 @@ class DynamicsLRPrior(object):
             Ys = np.c_[X[:, t, :], U[:, t, :], X[:, t+1, :]]
             # Obtain Normal-inverse-Wishart prior.
             mu0, Phi, mm, n0 = self.prior.eval(dX, dU, Ys)
+            #import pdb; pdb.set_trace()
             sig_reg = np.zeros((dX+dU+dX, dX+dU+dX))
-            sig_reg[it, it] = self._hyperparams['regularization']
+            sig_reg[it, it] = 1e-6 
             Fm, fv, dyn_covar = self.gauss_fit_joint_prior(Ys,
                         mu0, Phi, mm, n0, dwts, dX+dU, dX, sig_reg)
             self.Fm[t, :, :] = Fm

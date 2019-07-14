@@ -8,6 +8,7 @@ import copy
 import math
 import time
 import datetime
+import queue
 
 def getTimeStamp():
     ts = time.time()
@@ -50,7 +51,7 @@ def getNormal(mu, sigma, T = 1):
 
 #simulation initial
 
-def simulationInit(path="/Users/weijiawu/Documents/GitHub/MPPI.jl/python/half_cheetah/half_cheetah.xml"):
+def simulationInit(path="/home/wuweijia/GitHub/MPPI/python/half_cheetah/half_cheetah.xml"):
 
 #def simulationInit(path="/Users/weijiawu/Documents/GitHub/MPPI.jl/python/arm_gripper/arm_claw.xml"):
 
@@ -95,12 +96,13 @@ U = np.array(np.transpose([np.random.normal(m, s, T) for m, s in zip(mu, np.diag
 # print(real_sim.get_state())
 # pool = MjRenderPool(real_sim, n_workers=4)
 
-real_viewer = MjViewer(real_sim)
-real_viewer._record_video = True
-real_viewer._render_every_frame = True
-real_viewer._video_idx = 1
+#real_viewer = MjViewer(real_sim)
+#real_viewer._record_video = True
+#real_viewer._render_every_frame = True
+#real_viewer._video_idx = 1
 # real_viewer._show_mocap=False
 # real_viewer._video_frames = [60]
+record = queue.Queue()
 for i in range(iters):#TODO: implement the taskFinish function
     S=[0]*K
     base_control = []
@@ -132,10 +134,23 @@ for i in range(iters):#TODO: implement the taskFinish function
 
     U[:-1] = U[1:]
     U[-1] = np.array(np.transpose([np.random.normal(m, s) for m,s in zip(mu, np.diag(sigma))]))
-    real_viewer.render()
+    #real_viewer.render()
+    record.put(np.flip(real_sim.render(1024, 512, device_id = 0), 0))
 
     # print(real_sim.get_state()[1])
     print("real_sim works well")
 
-mujoco_py.mjviewer.save_video(real_viewer._video_queue, "./video_"+getFileName()+getTimeStamp()+".mp4", 10)
+import os
+import imageio
+filename = "./half_cheetah_video.mp4"
+if not os.path.isdir(os.path.dirname(filename)):
+    os.mkdir(os.path.dirname(filename))
+
+writer = imageio.get_writer(filename, fps=10)
+while not record.empty():
+    frame = record.get()
+    writer.append_data(frame)
+writer.close()
+
+#mujoco_py.mjviewer.save_video(real_viewer._video_queue, "./video_"+getFileName()+getTimeStamp()+".mp4", 10)
 print("finish")

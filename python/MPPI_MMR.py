@@ -1,27 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 0.8.4
-#   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
-#   language_info:
-#     codemirror_mode:
-#       name: ipython
-#       version: 3
-#     file_extension: .py
-#     mimetype: text/x-python
-#     name: python
-#     nbconvert_exporter: python
-#     pygments_lexer: ipython3
-#     version: 3.6.5
-# ---
-
 from mujoco_py import load_model_from_path, MjSim
 import MPPI
 import copy
@@ -33,11 +9,7 @@ import Memory_Model
 import numpy as np
 import multiprocessing as mp
 
-# MLP for Pima Indians Dataset Serialize to JSON and HDF5
-
-
-# +
-# @profile 
+# @profile
 def get_TerminalCost(self, data):
     episode_cost = 0
     state = data.site_xpos
@@ -56,13 +28,13 @@ def get_Cost(self, data):
     for i in range(len(end_pos)):
         cost += (end_pos[i]-obj_pos[i])**2
         cost += (target[i]-obj_pos[i])**2
-    return cost    
+    return cost
 
 def run_Episode(realState, output, k, kexi, T, K, alpha, U):
     model = load_model_from_path("/home/wuweijia/GitHub/MPPI/python/arm_gripper/arm_claw.xml")
     simEnv = MjSim(model)
     simEnv.set_state(realState)
-    
+
     episode_cost = 0
 
     for t in range(T):
@@ -81,13 +53,13 @@ def run_Episode(realState, output, k, kexi, T, K, alpha, U):
     episode_cost += self.get_TerminalCost(simEnv.data)
     output.put((k, episode_cost))
 #     return (k, episode_cost)
-    
-    
+
+
 def run_ag_Episode(realState, output, k, kexi, T, K, alpha, U):
     model = load_model_from_path("/home/wuweijia/GitHub/MPPI/python/arm_gripper/arm_claw.xml")
     simEnv = MjSim(model)
     simEnv.set_state(realState)
-    
+
     episode_cost = 0
 
     for t in range(T):
@@ -98,8 +70,8 @@ def run_ag_Episode(realState, output, k, kexi, T, K, alpha, U):
 
         simEnv.data.ctrl[:] = v
         simEnv.step()
-        
-        state = simEnv.data.site_xpos        
+
+        state = simEnv.data.site_xpos
 
         end_pos = state[0]
         obj_pos = state[1]
@@ -107,13 +79,13 @@ def run_ag_Episode(realState, output, k, kexi, T, K, alpha, U):
         for i in range(len(end_pos)):
             episode_cost += (end_pos[i]-obj_pos[i])**2
             episode_cost += (target[i]-obj_pos[i])**2
-            
+
     obj_pos = state[1]
     target = [0.1, 0.1, 0]
     for o,t in zip(obj_pos, target):
         episode_cost += (o-t)**2
 
-    output.put((k, episode_cost))    
+    output.put((k, episode_cost))
 # -
 
 
@@ -166,7 +138,7 @@ class MPPI_MMR(MPPI.MPPI):
         return self.model.predict(state)
 
     def get_expected_trajectory(self, realState):
-        traj = [] 
+        traj = []
         model = load_model_from_path(self.env_path)
         real_sim = MjSim(model)
         simEnv = self.get_Env()
@@ -185,7 +157,7 @@ class MPPI_MMR(MPPI.MPPI):
             print("v : {}".format(v))
             print("v shape: {}".format(np.array(v).shape))
 #             print("v: {}".format(v))
-    
+
             traj.append(v)
 #             self.apply_Control(simEnv, v)
             simEnv.data.ctrl[:] = v
@@ -204,13 +176,13 @@ class MPPI_MMR(MPPI.MPPI):
         for i in range(len(temp_S)):
             w_append(math.exp((lou - temp_S[i])/self.lamb)/yita)
         return temp_w
-    
+
     def get_update_control(self, U, base_control, w):
         U, base_control, w = np.array(U), np.array(base_control), np.array(w)
         bias_U = np.average(base_control, axis = 0, weights=w)
         return np.add(U, bias_U).tolist()
 
-#     @profile 
+#     @profile
     def get_control_label(self, nn_traj):
         processes = []
         temp_base_control = []
@@ -220,7 +192,7 @@ class MPPI_MMR(MPPI.MPPI):
             temp = self.get_Normal(self.mu, self.sigma, self.T)
 #             print("temp control: {}".format(temp))
             kexi = np.add(np.array(nn_traj), temp)
-            
+
             tbc_append(kexi)
             processes.append(mp.Process(target=run_ag_Episode, args=(self.recordRealEnv, self.output, k, kexi, self.T, self.K, self.alpha, self.U)))
         for p in processes:
@@ -234,12 +206,12 @@ class MPPI_MMR(MPPI.MPPI):
 
 #         print("S:{}".format(self.S))
         print("temp_S[0]: {}".format(temp_S[0]))
-        temp_w = self.get_compute_weight(temp_S)        
-        
-        processes = []
-        return self.get_update_control(self.U, temp_base_control, temp_w)               
+        temp_w = self.get_compute_weight(temp_S)
 
-#     @profile 
+        processes = []
+        return self.get_update_control(self.U, temp_base_control, temp_w)
+
+#     @profile
 #     def get_control_label(self, nn_traj):
 # #         pool = mp.Pool()
 #         results = []
@@ -258,17 +230,17 @@ class MPPI_MMR(MPPI.MPPI):
 #         temp_S = [r[1] for r in results]
 
 # #         print("S:{}".format(self.S))
-#         temp_w = self.get_compute_weight(temp_S)        
-        
+#         temp_w = self.get_compute_weight(temp_S)
+
 #         processes = []
-#         return self.get_update_control(self.U, temp_base_control, temp_w) 
+#         return self.get_update_control(self.U, temp_base_control, temp_w)
 
     def train_with_label_control(self, label_control, realState):
         simEnv = self.init_SimEnv(realState)
         input_state = []
 #         print(label_control)
         for i in range(len(label_control)):
-            input_state.append(simEnv.get_state().flatten())        
+            input_state.append(simEnv.get_state().flatten())
             self.apply_Control(simEnv, label_control[i])
         input_state = np.array(input_state)
         print("input_state: {}".format(input_state))

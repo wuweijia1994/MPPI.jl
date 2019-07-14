@@ -110,6 +110,7 @@ def getFileName():
     return "K:"+str(K)+"-T:"+str(T)+"-iters:"+str(iters)+"-gama:"+str(gama)+"-lamb:"+str(lamb)+"-alpha:"+str(alpha)
 
 real_sim = simulationInit()
+#import pdb; pdb.set_trace()
 #viewer = MjViewer(real_sim)
 
 # mean and standard deviation

@@ -80,6 +80,12 @@ class MPPI(object):
 #         else:
 #             printf("There is no customerized cost function.")
 #             return sum([x**2] for x in state)
+    def sample(self):
+        """This func use random sampling to generate different trajectories for model fitting"""
+        
+    def updateDynamics(self):
+        """Use the different trajectories to update the linear model"""
+    
         
     def get_Cost(self, data):
         
